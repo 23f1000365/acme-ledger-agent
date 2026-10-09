@@ -236,7 +236,9 @@ def answer_question(question):
         if not totals:
             return "No matching paid orders were found."
         best = max(totals, key=totals.get)
-        return {"product": best, metric: money(totals[best]) if metric == "revenue" else int(totals[best])}
+        if metric == "revenue":
+            return best
+        return {"product": best, metric: int(totals[best])}
 
     # Top/highest-spending customer.
     if any(w in q for w in ("top customer", "highest-spending customer", "spent the most", "largest customer")) and not f["customer"]:
