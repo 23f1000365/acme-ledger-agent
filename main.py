@@ -275,7 +275,8 @@ def answer_question(question):
         best = max(totals, key=totals.get)
         return {"customer": best, "revenue_usd": money(totals[best])}
     
-    # Unique customer counts.
+   
+    # Unique customer counts
     if "customer" in q and any(
         w in q for w in (
             "how many", "number of", "count",
@@ -284,13 +285,29 @@ def answer_question(question):
     ):
         customer_rows = paid if "paid" in q else rows
 
+        # Apply the requested product filter, if present.
+        product_match = None
+        for r in customer_rows:
+            product_name = str(r.get("product", "")).strip()
+            if product_name and product_name.lower() in q:
+                product_match = product_name
+                break
+
+        if product_match:
+            customer_rows = [
+                r for r in customer_rows
+                if str(r.get("product", "")).strip().lower()
+                == product_match.lower()
+            ]
+
         customers = {
-            str(r.get("customer", "")).strip().upper()
+            str(r.get("customer", "")).strip().casefold()
             for r in customer_rows
             if str(r.get("customer", "")).strip()
         }
 
         return len(customers)
+
 
 
     # Counts.
