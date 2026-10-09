@@ -265,6 +265,9 @@ def answer_question(question):
             if "paid" in q:
                 return len(paid)
             return len(rows)
+    # Average order value.
+    if "average order value" in q or "average order" in q or "aov" in q:
+        return money(sum(amount_usd(r) for r in paid) / len(paid)) if paid else 0        
 
     # Revenue/sales questions count only paid orders.
     if any(w in q for w in ("revenue", "sales", "sold", "turnover", "generated", "earned", "income")):
@@ -273,10 +276,6 @@ def answer_question(question):
     # Quantity or product unit questions.
     if any(w in q for w in ("units", "items", "quantity", "how many were sold")):
         return int(sum(float(r.get("qty", 0) or 0) for r in paid))
-
-    # Average order value.
-    if "average order value" in q or "average order" in q or "aov" in q:
-        return money(sum(amount_usd(r) for r in paid) / len(paid)) if paid else 0
 
     # Generic total/amount question defaults to paid USD total, with filters applied.
     if any(w in q for w in ("total", "amount", "value")):
