@@ -225,20 +225,44 @@ def answer_question(question):
         if any(x in q for x in ("spent", "spend", "revenue", "sales", "total")):
             return money(sum(amount_usd(r) for r in customer_rows if str(r.get("status", "")).lower() == "paid"))
 
+    
     # Product rankings / best sellers.
-    ranking_words = ("most popular", "best-selling", "bestselling", "top product", "which product", "highest-selling", "sold the most")
+    ranking_words = (
+        "most popular", "top-selling", "top selling",
+        "best-selling", "best selling", "bestselling",
+        "top product", "which product",
+        "highest-selling", "highest selling", "sold the most"
+    )
+
     if any(w in q for w in ranking_words) and not f["product"]:
-        metric = "qty" if any(w in q for w in ("units", "quantity", "items", "best-selling", "bestselling", "sold the most")) else "revenue"
+        revenue_words = (
+            "revenue", "earned", "earn", "income",
+            "turnover", "sales"
+        )
+
+        metric = (
+            "revenue"
+            if any(w in q for w in revenue_words)
+            else "qty"
+        )
+
         totals = {}
+
         for r in paid:
             name = r.get("product", "Unknown")
-            totals[name] = totals.get(name, 0.0) + (float(r.get("qty", 0) or 0) if metric == "qty" else amount_usd(r))
+
+            if metric == "revenue":
+                value = amount_usd(r)
+            else:
+                value = float(r.get("qty", 0) or 0)
+
+            totals[name] = totals.get(name, 0.0) + value
+
         if not totals:
             return "No matching paid orders were found."
-        best = max(totals, key=totals.get)
-        if metric == "revenue":
-            return best
-        return {"product": best, metric: int(totals[best])}
+
+        return max(totals, key=totals.get)
+
 
     # Top/highest-spending customer.
     if any(w in q for w in ("top customer", "highest-spending customer", "spent the most", "largest customer")) and not f["customer"]:
@@ -250,10 +274,24 @@ def answer_question(question):
             return "No matching paid orders were found."
         best = max(totals, key=totals.get)
         return {"customer": best, "revenue_usd": money(totals[best])}
-
+    
     # Unique customer counts.
-    if "customer" in q and any(w in q for w in ("how many", "number of", "count", "unique", "distinct")):
-        return len({r.get("customer") for r in rows if r.get("customer")})
+    if "customer" in q and any(
+        w in q for w in (
+            "how many", "number of", "count",
+            "unique", "distinct", "different"
+        )
+    ):
+        customer_rows = paid if "paid" in q else rows
+
+        customers = {
+            str(r.get("customer", "")).strip().upper()
+            for r in customer_rows
+            if str(r.get("customer", "")).strip()
+        }
+
+        return len(customers)
+
 
     # Counts.
     if any(w in q for w in ("how many", "number of", "count")):
@@ -270,8 +308,12 @@ def answer_question(question):
         return money(sum(amount_usd(r) for r in paid) / len(paid)) if paid else 0        
 
     # Revenue/sales questions count only paid orders.
-    if any(w in q for w in ("revenue", "sales", "sold", "turnover", "generated", "earned", "income")):
+    if any(w in q for w in (
+        "revenue", "sales", "sold", "turnover",
+        "generated", "earned", "earn", "income"
+    )):
         return money(sum(amount_usd(r) for r in paid))
+
 
     # Quantity or product unit questions.
     if any(w in q for w in ("units", "items", "quantity", "how many were sold")):
