@@ -320,9 +320,20 @@ def answer_question(question):
             if "paid" in q:
                 return len(paid)
             return len(rows)
-    # Average order value.
-    if "average order value" in q or "average order" in q or "aov" in q:
-        return money(sum(amount_usd(r) for r in paid) / len(paid)) if paid else 0        
+    
+    # Average order value: average USD revenue per paid order
+    if any(w in q for w in (
+        "average order value",
+        "average order",
+        "aov",
+        "on average",
+        "average paid order",
+        "order worth",
+    )):
+        return round(
+            sum(amount_usd(r) for r in paid) / len(paid), 2
+        ) if paid else 0
+        
 
     # Revenue/sales questions count only paid orders.
     if any(w in q for w in (
